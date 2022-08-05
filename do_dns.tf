@@ -7,8 +7,6 @@ locals {
     cname = "CNAME"
   }
 
-  digitalocean_ns = ["ns1.digitalocean.com.", "ns2.digitalocean.com.", "ns3.digitalocean.com."]
-
   migadu_dkim = ["key1", "key2", "key3"]
 
   migadu_mx = [{
@@ -37,12 +35,12 @@ resource "digitalocean_domain" "evilfactorylabs" {
 }
 
 resource "digitalocean_record" "evilfactorylabs_ns" {
-  for_each = toset(local.digitalocean_ns)
+  for_each = toset(var.dns_authoritaive_nameservers)
   domain   = digitalocean_domain.evilfactorylabs.id
   type     = local.dns_record.ns
 
   name  = "@"
-  value = each.value
+  value = "${each.value}."
 }
 
 resource "digitalocean_record" "evilfactorylabs_www" {
