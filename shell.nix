@@ -1,7 +1,7 @@
 with import <nixpkgs> {};
 
 pkgs.mkShell {
-  name = "evilfactorylabs-dns";
+  name = "area13";
 
   buildInputs = [
     terraform
