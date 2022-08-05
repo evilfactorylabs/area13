@@ -54,6 +54,14 @@ resource "digitalocean_record" "evilfactorylabs_www" {
   value = data.digitalocean_droplet.forem.ipv4_address
 }
 
+resource "digitalocean_record" "evilfactorylabs_atlantis" {
+  domain = digitalocean_domain.evilfactorylabs.id
+  type   = local.dns_record.a
+
+  name  = "atlantis"
+  value = "103.179.56.192"
+}
+
 resource "digitalocean_record" "evilfactorylabs_about" {
   domain = digitalocean_domain.evilfactorylabs.id
   type   = local.dns_record.cname
