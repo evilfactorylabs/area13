@@ -9,6 +9,13 @@ terraform {
       version = ">= 2.0.0"
     }
   }
+
+  cloud {
+    organization = "evilfactorylabs"
+    workspaces {
+      name = "area13"
+    }
+  }
 }
 
 provider "digitalocean" {
