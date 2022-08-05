@@ -8,6 +8,6 @@ workflows:
   default:
     plan:
       steps:
-      - init
-      - plan
-          extra_args: ["-var-file", "/etc/atlantis/area13.tfvars"]
+        - init
+        - plan:
+            extra_args: ["-var-file", "/etc/atlantis/area13.tfvars"]
