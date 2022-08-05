@@ -7,6 +7,9 @@ locals {
     cname = "CNAME"
   }
 
+  // https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site#configuring-an-apex-domain
+  github_pages_apex_ip = ["185.199.108.153", "185.199.109.153", "185.199.110.153", "185.199.111.153"]
+
   migadu_dkim = ["key1", "key2", "key3"]
 
   migadu_mx = [{
@@ -160,3 +163,31 @@ resource "digitalocean_record" "evilfactorylabs_mailgun_dkim" {
   value = "k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDE2EiU3PrqyJsZfz1MM+LRKTqy9tkjCeVeqY8pZjbOskZ/QdBQI308l1i7i2AQ16GvJK16NgnyT/g+kcCwFHLt5rmh4h/1jyO/Jl6Q+s9Sfqgo3RMZc9jQ5I+6hwU47wU1zLrvrPefuGCwF+sCvFvRBS80fQP15GTAoSuiZN4LyQIDAQAB"
 }
 
+resource "digitalocean_domain" "evlfctrypro" {
+  name = "evlfctry.pro"
+}
+
+resource "digitalocean_record" "evlfctrypro_apex" {
+  for_each = toset(local.github_pages_apex_ip)
+  domain   = digitalocean_domain.evlfctrypro.id
+  type     = local.dns_record.a
+
+  name  = "@"
+  value = each.value
+}
+
+resource "digitalocean_record" "evlfctrypro_www" {
+  domain = digitalocean_domain.evlfctrypro.id
+  type   = local.dns_record.cname
+
+  name  = "www"
+  value = "evilfactorylabs.github.io."
+}
+
+resource "digitalocean_record" "evlfctrypro_github_domain_verification" {
+  domain = digitalocean_domain.evlfctrypro.id
+  type   = local.dns_record.txt
+
+  name  = "_github-challenge-evilfactorylabs"
+  value = "877b53fd61"
+}
