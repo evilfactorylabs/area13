@@ -5,7 +5,10 @@ provider "registry.terraform.io/digitalocean/digitalocean" {
   version     = "2.21.0"
   constraints = "~> 2.0"
   hashes = [
+    "h1:I7+tg0uhAJRNvSXceX6EXjGMc4QdspwYxUpGCRw1SUY=",
+    "h1:gndflVS5/+cwQbVVI6NwwB3dYK7W2QkmZuWmFBH/0tI=",
     "h1:jfg+obdslZflCiHOpNT4zT2ijLyx5bWT8kWodG8mWvw=",
+    "h1:ucS1eVLhmYwY6Vr5L3t+dBx76KMYzhvD08GcPQDLU2M=",
     "zh:122a4e7aa7315be52c484fa9b8e8681a42ad17e1f892ca17d6aeb575902df078",
     "zh:192f9428d965d1a5d2629e6ec1c238c6815601fbc909f905bf94ff9359ba88f6",
     "zh:20d88900cd24e9c05e2addeeb9fd5df285fba928d5f9981128352a6089fcec88",
@@ -29,6 +32,9 @@ provider "registry.terraform.io/namecheap/namecheap" {
   version     = "2.1.0"
   constraints = ">= 2.0.0"
   hashes = [
+    "h1:ajjprh9/qSPeqwq/kxUoSM9sapbzcBOxjJUp7bQUAiU=",
+    "h1:hprk50lXtEO7BrFukatptEoK/B59/GLyuR4gJyBE2Nw=",
+    "h1:p8LqzJtI4Mkxhcam2s73eFJzctlAZXZJ0Wwgd51Kyto=",
     "h1:wYjp1Gs7wf2J+VtkLmTRO6mALieCFhS0HYsQUwAbAUI=",
     "zh:3731f5f14a0958cd27a589ef7daa9be786b6490f2309c429eb2e9862aa4ac5f7",
     "zh:3cbceb12ec3521d9dfbd890eee731a40f4e1f42de30d28fc1d1e524091148caa",
