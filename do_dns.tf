@@ -62,6 +62,14 @@ resource "digitalocean_record" "evilfactorylabs_atlantis" {
   value = "103.179.56.192"
 }
 
+resource "digitalocean_record" "evilfactorylabs_localhost" {
+  domain = digitalocean_domain.evilfactorylabs.id
+  type   = local.dns_record.a
+
+  name  = "localhost"
+  value = "127.0.0.1"
+}
+
 resource "digitalocean_record" "evilfactorylabs_about" {
   domain = digitalocean_domain.evilfactorylabs.id
   type   = local.dns_record.cname
