@@ -56,10 +56,10 @@ resource "digitalocean_record" "evilfactorylabs_www" {
 
 resource "digitalocean_record" "evilfactorylabs_atlantis" {
   domain = digitalocean_domain.evilfactorylabs.id
-  type   = local.dns_record.a
+  type   = local.dns_record.cname
 
   name  = "atlantis"
-  value = "103.179.56.192"
+  value = "cname.edgy.network"
 }
 
 resource "digitalocean_record" "evilfactorylabs_localhost" {
