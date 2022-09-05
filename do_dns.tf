@@ -59,7 +59,7 @@ resource "digitalocean_record" "evilfactorylabs_atlantis" {
   type   = local.dns_record.cname
 
   name  = "atlantis"
-  value = "cname.edgy.network"
+  value = "cname.edgy.network."
 }
 
 resource "digitalocean_record" "evilfactorylabs_localhost" {
