@@ -9,7 +9,7 @@ resource "linode_firewall" "evilfactorylabs_social" {
   inbound {
     action = "ACCEPT"
     ipv4 = [
-      "100.64.0.0/10"
+      local.allowed_subnets.tailnet,
     ]
     ipv6     = []
     label    = "accept-inbound-SSH"
@@ -19,7 +19,7 @@ resource "linode_firewall" "evilfactorylabs_social" {
   inbound {
     action = "DROP"
     ipv4 = [
-      "0.0.0.0/0",
+      local.allowed_subnets.internet,
     ]
     ipv6 = [
       "::/0",
@@ -31,7 +31,7 @@ resource "linode_firewall" "evilfactorylabs_social" {
   inbound {
     action = "ACCEPT"
     ipv4 = [
-      "0.0.0.0/0",
+      local.allowed_subnets.internet,
     ]
     ipv6 = [
       "::/0",
@@ -43,7 +43,7 @@ resource "linode_firewall" "evilfactorylabs_social" {
   inbound {
     action = "ACCEPT"
     ipv4 = [
-      "0.0.0.0/0",
+      local.allowed_subnets.internet,
     ]
     ipv6 = [
       "::/0",
