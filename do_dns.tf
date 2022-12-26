@@ -34,7 +34,7 @@ locals {
 resource "digitalocean_domain" "evilfactorylabs" {
   name = "evilfactorylabs.org"
 
-  ip_address = data.digitalocean_droplet.forem.ipv4_address
+  ip_address = resource.digitalocean_droplet.forem.ipv4_address
 }
 
 resource "digitalocean_record" "evilfactorylabs_ns" {
@@ -51,7 +51,7 @@ resource "digitalocean_record" "evilfactorylabs_www" {
   type   = local.dns_record.a
 
   name  = "www"
-  value = data.digitalocean_droplet.forem.ipv4_address
+  value = resource.digitalocean_droplet.forem.ipv4_address
 }
 
 resource "digitalocean_record" "evilfactorylabs_atlantis" {

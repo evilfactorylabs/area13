@@ -50,9 +50,9 @@ locals {
 }
 
 resource "digitalocean_firewall" "forem" {
-  name = data.digitalocean_droplet.forem.name
+  name = resource.digitalocean_droplet.forem.name
 
-  droplet_ids = [data.digitalocean_droplet.forem.id]
+  droplet_ids = [resource.digitalocean_droplet.forem.id]
 
   dynamic "inbound_rule" {
     for_each = { for i, v in local.allowed_inbounds : i => v }
