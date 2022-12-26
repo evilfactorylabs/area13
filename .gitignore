@@ -2,3 +2,12 @@
 .terraform
 terraform.tfstate
 terraform.tfstate.*
+
+# Created by https://www.toptal.com/developers/gitignore/api/direnv
+# Edit at https://www.toptal.com/developers/gitignore?templates=direnv
+
+### direnv ###
+.direnv
+.envrc
+
+# End of https://www.toptal.com/developers/gitignore/api/direnv
