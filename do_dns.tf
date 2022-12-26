@@ -70,14 +70,6 @@ resource "digitalocean_record" "evilfactorylabs_localhost" {
   value = "127.0.0.1"
 }
 
-resource "digitalocean_record" "evilfactorylabs_fm" {
-  domain = digitalocean_domain.evilfactorylabs.id
-  type   = local.dns_record.a
-
-  name  = "fm"
-  value = "103.3.62.193"
-}
-
 resource "digitalocean_record" "evilfactorylabs_about" {
   domain = digitalocean_domain.evilfactorylabs.id
   type   = local.dns_record.cname
