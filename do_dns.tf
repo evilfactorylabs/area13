@@ -38,7 +38,7 @@ resource "digitalocean_domain" "evilfactorylabs" {
 }
 
 resource "digitalocean_record" "evilfactorylabs_ns" {
-  for_each = toset(var.dns_authoritaive_nameservers)
+  for_each = toset(var.dns_authoritative_nameservers)
   domain   = digitalocean_domain.evilfactorylabs.id
   type     = local.dns_record.ns
 
