@@ -6,7 +6,9 @@ terraform.tfstate.*
 # Edit at https://www.toptal.com/developers/gitignore?templates=direnv
 
 ### direnv ###
-.direnv
 .envrc
+.direnv
 
 # End of https://www.toptal.com/developers/gitignore/api/direnv
+result
+config.tf.json

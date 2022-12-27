@@ -1,4 +1,8 @@
+# legacy nix
 use_nix
+
+# 👇 uncomment when you want to use flake
+# use flake
 
 export TF_VAR_do_token=
 export TF_VAR_linode_token=
