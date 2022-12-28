@@ -78,42 +78,39 @@
             '');
           };
 
-          # nix run ".#apply"
-          apps.apply = {
+          # nix run ".#destroy"
+          apps.destroy = {
+            type = "app";
+            program = toString (pkgs.writers.writeBash "destroy" ''
+              if [[ -e config.tf.json ]]; then rm -f config.tf.json; fi
+              cp ${terraformConfiguration} config.tf.json \
+                && ${terraform}/bin/terraform init \
+                && ${terraform}/bin/terraform destroy
+            '');
+          };
 
-            # nix run ".#destroy"
-            apps.destroy = {
-              type = "app";
-              program = toString (pkgs.writers.writeBash "destroy" ''
-                if [[ -e config.tf.json ]]; then rm -f config.tf.json; fi
-                cp ${terraformConfiguration} config.tf.json \
-                  && ${terraform}/bin/terraform init \
-                  && ${terraform}/bin/terraform destroy
-              '');
-            };
-
-            # nix flake check
-            checks = {
-              pre-commit-check = pre-commit-hooks.lib.${system}.run {
-                src = ./.;
-                hooks = {
-                  nixpkgs-fmt.enable = true;
-                  terraform-format.enable = true;
-                  validate-terraform = {
-                    name = "Validate terraform configuration";
-                    enable = true;
-                    entry = "terraform validate";
-                    files = "\\.tf.json$";
-                    language = "system";
-                    pass_filenames = false;
-                  };
+          # nix flake check
+          checks = {
+            pre-commit-check = pre-commit-hooks.lib.${system}.run {
+              src = ./.;
+              hooks = {
+                nixpkgs-fmt.enable = true;
+                terraform-format.enable = true;
+                validate-terraform = {
+                  name = "Validate terraform configuration";
+                  enable = true;
+                  entry = "terraform validate";
+                  files = "\\.tf.json$";
+                  language = "system";
+                  pass_filenames = false;
                 };
               };
             };
+          };
 
 
-            # nix run
-            # every run will be generated config.tf.json
-            defaultApp = self.apps.${system}.apply;
-          });
-        }
+          # nix run
+          # every run will be generated config.tf.json
+          defaultApp = self.apps.${system}.apply;
+        });
+}
