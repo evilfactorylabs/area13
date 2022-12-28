@@ -8,6 +8,7 @@ workflows:
   default:
     plan:
       steps:
+        - run: rm ./config.tf.json || true
         - run: export PATH=/root/.nix-profile/bin:/nix/var/nix/profiles/default/bin:$PATH; echo $PATH; nix build -o config.tf.json
         - init
         - plan:
