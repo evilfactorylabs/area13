@@ -86,7 +86,15 @@
               src = ./.;
               hooks = {
                 nixpkgs-fmt.enable = true;
-                terraform-format. enable = true;
+                terraform-format.enable = true;
+                validate-terraform = {
+                  name = "Validate terraform configuration";
+                  enable = true;
+                  entry = "terraform validate";
+                  files = "\\.tf.json$";
+                  language = "system";
+                  pass_filenames = false;
+                };
               };
             };
           };
