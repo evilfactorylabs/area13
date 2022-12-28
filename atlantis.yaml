@@ -8,7 +8,7 @@ workflows:
   default:
     plan:
       steps:
-        - run: echo $PATH; id; nix build -o config.tf.json
+        - run: export PATH=/root/.nix-profile/bin:/nix/var/nix/profiles/default/bin:$PATH; echo $PATH; nix build -o config.tf.json
         - init
         - plan:
             extra_args: ["-var-file", "/etc/atlantis/area13.tfvars"]
