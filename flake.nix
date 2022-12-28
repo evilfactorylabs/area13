@@ -9,12 +9,18 @@
     };
 
     # Other sources / nix utilities
+
+    # pre-commit-hooks
+    pre-commit-hooks = {
+      url = "github:cachix/pre-commit-hooks.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     flake-compat = { url = "github:edolstra/flake-compat"; flake = false; };
     flake-utils.url = "github:numtide/flake-utils";
     nix-filter.url = "github:numtide/nix-filter";
   };
 
-  outputs = { self, nixpkgs, flake-utils, terranix, flake-compat, nix-filter }:
+  outputs = { self, nixpkgs, flake-utils, terranix, flake-compat, nix-filter, pre-commit-hooks }:
     flake-utils.lib.eachDefaultSystem
       (system:
         let
@@ -39,6 +45,7 @@
 
           # nix develop
           devShells.default = pkgs.mkShell {
+            inherit (self.checks.${system}.pre-commit-check) shellHook;
             buildInputs = with pkgs;[
               terraform
               terranix.defaultPackage.${system}
@@ -74,14 +81,15 @@
           };
 
           # nix flake check
-          checks.${system} =
-            pkgs.runCommand "check-nixpkgs-fmt"
-              { nativeBuildInputs = [ pkgs.nixpkgs-fmt ]; }
-              ''
-                echo "checking nix formatting"
-                nixpkgs-fmt --check ${sources.nix}
-                touch $out
-              '';
+          checks = {
+            pre-commit-check = pre-commit-hooks.lib.${system}.run {
+              src = ./.;
+              hooks = {
+                nixpkgs-fmt.enable = true;
+                terraform-format = true;
+              };
+            };
+          };
 
 
           # nix run

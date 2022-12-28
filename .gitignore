@@ -12,3 +12,6 @@ terraform.tfstate.*
 # End of https://www.toptal.com/developers/gitignore/api/direnv
 result
 config.tf.json
+
+# ignored generated precommit config by nix-precommit
+/.pre-commit-config.yaml
