@@ -86,7 +86,7 @@
               src = ./.;
               hooks = {
                 nixpkgs-fmt.enable = true;
-                terraform-format = true;
+                terraform-format. enable = true;
               };
             };
           };
