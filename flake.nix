@@ -29,8 +29,7 @@
           terraformConfiguration = terranix.lib.terranixConfiguration {
             inherit system;
             modules = [
-              # TODO rewrite *.tf to .nix 
-              # see https://terranix.org/documentation/terranix-vs-hcl/
+              ./do_vpc.nix
             ];
           };
           sources.nix = nix-filter.lib {
