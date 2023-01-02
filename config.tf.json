@@ -1,1 +1,115 @@
-{}
+{
+  "locals": {
+    "allowed_inbounds": [
+      {
+        "name": "SSH",
+        "port_range": "22",
+        "protocol": "tcp",
+        "source_addresses": [
+          "100.64.0.0/10"
+        ]
+      },
+      {
+        "name": "HTTP",
+        "port_range": "80",
+        "protocol": "tcp",
+        "source_addresses": [
+          "0.0.0.0/0"
+        ]
+      },
+      {
+        "name": "HTTPS",
+        "port_range": "443",
+        "protocol": "tcp",
+        "source_addresses": [
+          "0.0.0.0/0"
+        ]
+      },
+      {
+        "name": "QUIC",
+        "port_range": "443",
+        "protocol": "udp",
+        "source_addresses": [
+          "0.0.0.0/0"
+        ]
+      },
+      {
+        "name": "Tailscale",
+        "port_range": "41641",
+        "protocol": "udp",
+        "source_addresses": [
+          "0.0.0.0/0"
+        ]
+      }
+    ],
+    "allowed_outbounds": [
+      {
+        "name": "All TCP",
+        "port_range": "1-65535",
+        "protocol": "tcp",
+        "source_addresses": [
+          "0.0.0.0/0"
+        ]
+      },
+      {
+        "name": "All UDP",
+        "port_range": "1-65535",
+        "protocol": "udp",
+        "source_addresses": [
+          "0.0.0.0/0"
+        ]
+      }
+    ],
+    "allowed_subnets": {
+      "internet": "0.0.0.0/0",
+      "tailnet": "100.64.0.0/10"
+    }
+  },
+  "resource": {
+    "digitalocean_droplet": {
+      "forem": [
+        {
+          "ip_range": "88327586",
+          "name": "www.evilfactorylabs.org",
+          "region": "sgp1",
+          "size": "s-2vcpu-2gb"
+        }
+      ]
+    },
+    "digitalocean_firewall": {
+      "forem": {
+        "dynamic": {
+          "inbound_rule": {
+            "content": {
+              "port_range": "inbound_rule.value[\"port_range\"]",
+              "protocol": "inbound_rule.value[\"protocol\"]",
+              "source_addresses": "inbound_rule.value[\"source_addresses\"]"
+            },
+            "droplet_ids": [
+              "resource.digitalocean_droplet.forem.id"
+            ],
+            "for_each": "{ for i, v in local.allowed_inbounds : i => v }"
+          },
+          "outbound_rule": {
+            "content": {
+              "destination_addresses": "outbound_rule.value[\"source_addresses\"]",
+              "port_range": "outbound_rule.value[\"port_range\"]",
+              "protocol": "outbound_rule.value[\"protocol\"]"
+            },
+            "for_each": "{ for i, v in local.allowed_outbounds : i => v }"
+          }
+        },
+        "name": "resource.digitalocean_droplet.forem.name"
+      }
+    },
+    "digitalocean_vpc": {
+      "dummy-sgp": [
+        {
+          "ip_range": "10.105.69.0/20",
+          "name": "dummy-sgp",
+          "region": "sgp1"
+        }
+      ]
+    }
+  }
+}

@@ -29,7 +29,7 @@
           terraformConfiguration = terranix.lib.terranixConfiguration {
             inherit system;
             modules = [
-              ./do_vpc.nix
+              ./digitalocean.nix
             ];
           };
           sources.nix = nix-filter.lib {
@@ -98,7 +98,7 @@
                 validate-terraform = {
                   name = "Validate terraform configuration";
                   enable = true;
-                  entry = "terraform validate";
+                  entry = "${terraform}/bin/terraform validate";
                   files = "\\.tf.json$";
                   language = "system";
                   pass_filenames = false;
