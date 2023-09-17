@@ -207,3 +207,7 @@ resource "digitalocean_record" "evlfctrypro_github_domain_verification" {
   name  = "_github-challenge-evilfactorylabs"
   value = "877b53fd61"
 }
+
+resource "digitalocean_domain" "evilfactorylabs_social" {
+  name = "evilfactorylabs.social"
+}
