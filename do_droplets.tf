@@ -7,7 +7,7 @@ resource "digitalocean_droplet" "forem" {
 
 resource "digitalocean_droplet" "evilfactorylabs_social" {
   name   = "evilfactorylabs.social"
-  image  = "362825530"
+  image  = "ubuntu-22-04-x64"
   region = "sgp1"
   size   = "s-2vcpu-4gb"
 }
