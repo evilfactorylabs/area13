@@ -211,3 +211,61 @@ resource "digitalocean_record" "evlfctrypro_github_domain_verification" {
 resource "digitalocean_domain" "evilfactorylabs_social" {
   name = "evilfactorylabs.social"
 }
+
+resource "digitalocean_record" "evilfactorylabs_social_apex" {
+  domain = digitalocean_domain.evilfactorylabs_social.id
+  type   = local.dns_record.a
+
+  name  = "@"
+  value = "178.128.103.137"
+}
+
+resource "digitalocean_record" "evilfactorylabs_social_u" {
+  domain = digitalocean_domain.evilfactorylabs_social.id
+  type   = local.dns_record.a
+
+  name  = "u"
+  value = "178.128.103.137"
+}
+
+resource "digitalocean_record" "evilfactorylabs_social_cdn" {
+  domain = digitalocean_domain.evilfactorylabs_social.id
+  type   = local.dns_record.cname
+
+  name  = "cdn"
+  value = "evilfactorylabs-social-sgp1-digitaloceanspaces.b-cdn.net."
+}
+
+resource "digitalocean_record" "evilfactorylabs_social_mailgun" {
+  domain = digitalocean_domain.evilfactorylabs_social.id
+  type   = local.dns_record.cname
+
+  name  = "email.mg"
+  value = "eu.mailgun.org."
+}
+
+resource "digitalocean_record" "evilfactorylabs_social_mailgun_mx" {
+  for_each = { for i, v in local.mailgun_mx : i => v }
+  domain   = digitalocean_domain.evilfactorylabs_social.id
+  type     = local.dns_record.mx
+
+  name     = "@"
+  value    = each.value.domain
+  priority = each.value.priority
+}
+
+resource "digitalocean_record" "evilfactorylabs_social_mailgun_spf" {
+  domain = digitalocean_domain.evilfactorylabs_social.id
+  type   = local.dns_record.txt
+
+  name  = "mg"
+  value = "v=spf1 include:mailgun.org ~all"
+}
+
+resource "digitalocean_record" "evilfactorylabs_social_mailgun_dkim" {
+  domain = digitalocean_domain.evilfactorylabs_social.id
+  type   = local.dns_record.txt
+
+  name  = "mta._domainkey.mg"
+  value = "k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrPKiwLlHzORW+15yUzFqA3qaVqs8oCmz69hNOaEx5sAnxpP7GpVvapEB/Bt2LNb1memDHcNfwwc7aUYI7YYUAQtPB8Tmfy1p91skVIdeNpJ3TM8qemKmZ3JIeO/JztzOIwwUjUY8dg7OuoP9zJAK/JU6lcbpdDBHUpSVEYqBsKQIDAQAB"
+}
