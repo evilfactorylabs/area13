@@ -4,3 +4,10 @@ resource "digitalocean_droplet" "forem" {
   region = "sgp1"
   size   = "s-2vcpu-2gb"
 }
+
+resource "digitalocean_droplet" "evilfactorylabs_social" {
+  name   = "evilfactorylabs.social"
+  image  = "362825530"
+  region = "sgp1"
+  size   = "s-2vcpu-4gb"
+}

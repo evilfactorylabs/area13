@@ -217,7 +217,7 @@ resource "digitalocean_record" "evilfactorylabs_social_apex" {
   type   = local.dns_record.a
 
   name  = "@"
-  value = "178.128.103.137"
+  value = resource.digitalocean_droplet.evilfactorylabs_social.ipv4_address
 }
 
 resource "digitalocean_record" "evilfactorylabs_social_u" {
@@ -225,7 +225,7 @@ resource "digitalocean_record" "evilfactorylabs_social_u" {
   type   = local.dns_record.a
 
   name  = "u"
-  value = "178.128.103.137"
+  value = resource.digitalocean_droplet.evilfactorylabs_social.ipv4_address
 }
 
 resource "digitalocean_record" "evilfactorylabs_social_cdn" {
