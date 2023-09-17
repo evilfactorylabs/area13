@@ -19,8 +19,12 @@ terraform {
 }
 
 provider "digitalocean" {
-  token = var.do_token
+  token             = var.do_token
+  spaces_access_id  = var.do_spaces_access_id
+  spaces_secret_key = var.do_spaces_secret_key
 }
+
+
 
 provider "namecheap" {
   user_name = var.namecheap_username

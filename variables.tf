@@ -2,6 +2,14 @@ variable "do_token" {
   description = "get it from https://cloud.digitalocean.com/account/api/tokens"
 }
 
+variable "do_spaces_access_id" {
+  type = string
+}
+
+variable "do_spaces_secret_key" {
+  type = string
+}
+
 variable "dns_authoritative_nameservers" {
   default = ["ns1.digitalocean.com", "ns2.digitalocean.com", "ns3.digitalocean.com"]
 }
