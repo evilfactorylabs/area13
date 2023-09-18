@@ -10,4 +10,4 @@ workflows:
       steps:
         - init
         - plan:
-            extra_args: ["-var-file", "/etc/atlantis/area13.tfvars"]
+            extra_args: ["-var-file", "/home/atlantis/area13.tfvars"]
