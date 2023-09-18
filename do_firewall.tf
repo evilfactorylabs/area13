@@ -8,7 +8,7 @@ locals {
     name             = "SSH"
     protocol         = "tcp"
     port_range       = "22"
-    source_addresses = [local.allowed_subnets.tailnet]
+    source_addresses = [local.allowed_subnets.internet]
     },
     {
       name             = "HTTP",
