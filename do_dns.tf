@@ -59,7 +59,7 @@ resource "digitalocean_record" "evilfactorylabs_localhost" {
   type   = local.dns_record.a
 
   name  = "localhost"
-  value = "127.0.0.1"
+  value = "127.0.0.11"
 }
 
 resource "digitalocean_record" "evilfactorylabs_about" {
