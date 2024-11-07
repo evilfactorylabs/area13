@@ -8,9 +8,22 @@
   perSystem =
     {
       pkgs,
+      config,
       ...
     }:
     {
+      pre-commit.check.enable = true;
+      pre-commit.settings.hooks = {
+        actionlint.enable = true;
+        shellcheck.enable = true;
+        deadnix.enable = true;
+        deadnix.excludes = [ "nix/overlays/nodePackages/node2nix" ];
+        nixfmt-rfc-style.enable = true;
+      };
+      devShells.default = pkgs.mkShell {
+        shellHook = config.pre-commit.installationScript;
+        buildInputs = config.pre-commit.settings.enabledPackages;
+      };
       packages.cachex = pkgs.writeShellApplication {
         name = "cachex";
         runtimeInputs = with pkgs; [
@@ -75,22 +88,23 @@
     ];
   };
 
-  flake.nixosModules.maintainers = {
-    users.users.root.openssh.authorizedKeys.keys = [
-      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDKvi3Co5fB1dSU2Qs1sR6LwdB1hM6HCyIWfXsC0wgz1pmeFlje24SzPCxDtsVMq28fDpEBsXPqKSZbUIyBtHRnpIc72Z8IV0KNtBjbKQTfHLTiDu43e+VLuAdFE7u2Wf5KPQIQ52r/jr9P7UKU2GKwV016OzrRiaZjm+gixmd8YRfidzG1bsL5fbKBjxCIUROdVpW5kNNtPZHpeuHCkZ7341USC6V2qnp1BNHIoHLjRYosV82apOxN/AWY/tMN2jlVQ/gKIUHbxXoILsG+XRFCen5TSSearx54KxifI1aIWbxVVmmYNuLXGWnVumaH6U7ARpz2cEXQB9z2lvJGYmod8qfloVdjXESu8OFe4RT+nj0JUQs7pMhiN6K1AsMQiyFc0ZmU2UNx4JcHre5STnSKUHUCx4zzoToFvIQRBTB3HePHy74FcXWaYDAN/6YF3JEA203nyYL4o5m/KhSXNkcT3H+r3IAqKnl7J7obsvNowwa1UB2NxVmq0VXXR8uZlT0="
-      "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHnjecqMe2lrGzAvQ2VQRTXhjZ5q1tONgme+2/97Z3VSXdY0i2bEH3qGEIC7uMyWUfmLystXxqP0u6/Xspmm0Ck="
-    ];
-    users.users.komunix = {
-      home = "/home/komunix";
-      createHome = true;
-      isNormalUser = true;
-      extraGroups = [ "wheel" ];
-      openssh.authorizedKeys.keys = [
+  flake.nixosModules.maintainers =
+    let
+      keys = [
         "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDKvi3Co5fB1dSU2Qs1sR6LwdB1hM6HCyIWfXsC0wgz1pmeFlje24SzPCxDtsVMq28fDpEBsXPqKSZbUIyBtHRnpIc72Z8IV0KNtBjbKQTfHLTiDu43e+VLuAdFE7u2Wf5KPQIQ52r/jr9P7UKU2GKwV016OzrRiaZjm+gixmd8YRfidzG1bsL5fbKBjxCIUROdVpW5kNNtPZHpeuHCkZ7341USC6V2qnp1BNHIoHLjRYosV82apOxN/AWY/tMN2jlVQ/gKIUHbxXoILsG+XRFCen5TSSearx54KxifI1aIWbxVVmmYNuLXGWnVumaH6U7ARpz2cEXQB9z2lvJGYmod8qfloVdjXESu8OFe4RT+nj0JUQs7pMhiN6K1AsMQiyFc0ZmU2UNx4JcHre5STnSKUHUCx4zzoToFvIQRBTB3HePHy74FcXWaYDAN/6YF3JEA203nyYL4o5m/KhSXNkcT3H+r3IAqKnl7J7obsvNowwa1UB2NxVmq0VXXR8uZlT0="
         "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHnjecqMe2lrGzAvQ2VQRTXhjZ5q1tONgme+2/97Z3VSXdY0i2bEH3qGEIC7uMyWUfmLystXxqP0u6/Xspmm0Ck="
       ];
+    in
+    {
+      users.users.root.openssh.authorizedKeys.keys = keys;
+      users.users.komunix = {
+        home = "/home/komunix";
+        createHome = true;
+        isNormalUser = true;
+        extraGroups = [ "wheel" ];
+        openssh.authorizedKeys.keys = keys;
+      };
     };
-  };
 
   flake.nixosModules.services-cachex =
     {
@@ -166,6 +180,7 @@
             [[ -d ${cfg.workDir}/cachex ]] || \
               (mkdir -p ${cfg.workDir}/cachex && chown komunix:users ${cfg.workDir}/cachex)
 
+            # TODO: better way is using options `services.nfs.*` from `NixOS`.
             [[ -d ${cfg.workDir}/nfs ]] || \
               (mount -t nfs -O rw,username=komunix,uid=1030,gid=100 100.121.185.1:/volume2/komunix ${cfg.workDir}/nfs)
 
