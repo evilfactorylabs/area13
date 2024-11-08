@@ -47,6 +47,27 @@
       };
     };
 
+  /**
+    Build image for Raspberry Pi:
+    `nix build .#nixosConfigurations.komunix-pi.config.system.build.sdImage` to build the sd card image, and
+    `nix build .#nixosConfigurations.komunix-pi.config.system.build.toplevel` to build (only) the system
+  */
+  flake.nixosConfigurations.komunix-pi = inputs.nixpkgs.lib.nixosSystem {
+    system = "aarch64-linux";
+    modules = inputs.nixpkgs.lib.attrValues self.nixosModules ++ [
+      "${inputs.nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
+      (
+        { config, ... }:
+        {
+          services.cachex.enable = true;
+          services.cachex.enableCron = true;
+          services.cachex.workDir = config.users.users.komunix.home;
+          services.cachex.cachexPackage = self.packages.aarch64-linux.cachex;
+        }
+      )
+    ];
+  };
+
   flake.nixosConfigurations.komunix-dev = inputs.nixpkgs.lib.nixosSystem {
     system = "aarch64-linux";
     modules = inputs.nixpkgs.lib.attrValues self.nixosModules ++ [
