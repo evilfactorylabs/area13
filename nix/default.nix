@@ -34,9 +34,9 @@
         text = ''
           NFS_DIR="$1"
           TIMESTAMP=$(date +%s)
-          USAGE=$(timeout 5s df -h "$NFS_DIR" | tail -n1 || echo "0")
-          TOTAL_CACHE=$(find "$NFS_DIR" -type f | wc -l || echo "0")
-          NICE=$(du -sh "$NFS_DIR" || echo "0")
+          USAGE=$(df -h "$NFS_DIR/nix-cache" | tail -n1 || echo "0")
+          TOTAL_CACHE=$(find "$NFS_DIR/nix-cache" -type f | wc -l || echo "0")
+          NICE=$(du -sh "$NFS_DIR/nix-cache" || echo "0")
 
           export TIMESTAMP
           export USAGE
@@ -149,6 +149,11 @@
         inputs.sops.nixosModules.sops
       ];
 
+      # hosts aliases
+      networking.hosts = {
+        "100.121.185.1" = [ "synology" ];
+      };
+
     };
 
   flake.nixosModules.services-cachex =
@@ -215,23 +220,20 @@
       config = mkIf cfg.enable {
         environment.systemPackages = [
           cfg.caddyPackage
+          pkgs.nfs-utils
         ];
 
         services.cron.enable = cfg.settings.cron;
         services.cron.systemCronJobs = [
-          "* * * * * cachex ${getExe cfg.cachexPackage} > ${cfg.settings.workDir}/cachex/index.html"
+          "* * * * * cachex ${getExe cfg.cachexPackage} ${cfg.settings.workDir}/nfs > ${cfg.settings.workDir}/cachex/index.html"
         ];
 
         services.rpcbind.enable = true; # needed for NFS
-        services.nfs.server.enable = true;
-        networking.hosts = {
-          "100.121.185.1" = [ "synology" ];
-        };
         systemd.mounts = [
           {
             type = "nfs";
             mountConfig = {
-              Options = "auto,nofail,noatime,nolock,intr,tcp";
+              Options = "auto,nofail,noatime,nolock,tcp";
             };
             what = "synology:/volume2/komunix";
             where = "${cfg.settings.workDir}/nfs";
@@ -252,8 +254,6 @@
           mkBefore ''
             [[ -d ${cfg.settings.workDir}/cachex ]] || \
               (mkdir -p ${cfg.settings.workDir}/cachex && chown komunix:users ${cfg.settings.workDir}/cachex)
-
-            ${getExe cfg.cachexPackage} ${cfg.settings.workDir}/nfs > ${cfg.settings.workDir}/cachex/index.html
           '';
 
         systemd.services.caddy = {
