@@ -34,9 +34,9 @@
         text = ''
           NFS_DIR="$1"
           TIMESTAMP=$(date +%s)
-          USAGE=$(df -h "$NFS_DIR" | tail -n1 || 0)
-          TOTAL_CACHE=$(find "$NFS_DIR" -type f | wc -l)
-          NICE=$(du -sh "$NFS_DIR")
+          USAGE=$(timeout 5s df -h "$NFS_DIR" | tail -n1 || echo "0")
+          TOTAL_CACHE=$(find "$NFS_DIR" -type f | wc -l || echo "0")
+          NICE=$(du -sh "$NFS_DIR" || echo "0")
 
           export TIMESTAMP
           export USAGE
@@ -60,9 +60,9 @@
         { config, ... }:
         {
           services.cachex.enable = true;
-          services.cachex.enableCron = true;
-          services.cachex.workDir = config.users.users.komunix.home;
           services.cachex.cachexPackage = self.packages.aarch64-linux.cachex;
+          services.cachex.settings.cron = true;
+          services.cachex.settings.workDir = config.users.users.komunix.home;
         }
       )
     ];
@@ -76,9 +76,9 @@
         { config, ... }:
         {
           services.cachex.enable = true;
-          services.cachex.enableCron = true;
-          services.cachex.workDir = config.users.users.komunix.home;
           services.cachex.cachexPackage = self.packages.aarch64-linux.cachex;
+          services.cachex.settings.cron = true;
+          services.cachex.settings.workDir = config.users.users.komunix.home;
         }
       )
     ];
@@ -91,9 +91,9 @@
         { config, ... }:
         {
           services.cachex.enable = true;
-          services.cachex.enableCron = true;
-          services.cachex.workDir = config.users.users.komunix.home;
           services.cachex.cachexPackage = self.packages.aarch64-linux.cachex;
+          services.cachex.settings.cron = true;
+          services.cachex.settings.workDir = config.users.users.komunix.home;
         }
       )
     ];
@@ -122,7 +122,10 @@
         home = "/home/komunix";
         createHome = true;
         isNormalUser = true;
-        extraGroups = [ "wheel" ];
+        extraGroups = [
+          "wheel"
+          "networkmanager"
+        ];
         openssh.authorizedKeys.keys = keys;
       };
     };
@@ -147,13 +150,6 @@
             Enable caddy for cachex
           '';
         };
-        enableCron = mkOption {
-          default = false;
-          type = with types; bool;
-          description = ''
-            Enable cachex in cron job
-          '';
-        };
         cachexPackage = mkOption {
           type = types.package;
           description = ''
@@ -168,18 +164,25 @@
           '';
           example = literalExample "pkgs.caddy";
         };
-        workDir = mkOption {
+        settings.cron = mkOption {
+          default = false;
+          type = with types; bool;
+          description = ''
+            Enable cachex in cron job
+          '';
+        };
+        settings.workDir = mkOption {
           type = types.str;
           example = literalExample "/home/komunix";
         };
-        listenAddress = mkOption {
+        settings.listenAddress = mkOption {
           type = types.str;
           default = "127.0.0.1";
           description = ''
             Listen Address
           '';
         };
-        listenPort = mkOption {
+        settings.listenPort = mkOption {
           type = types.port;
           default = 2022;
           description = ''
@@ -187,41 +190,59 @@
           '';
         };
       };
+
       config = mkIf cfg.enable {
         environment.systemPackages = [ cfg.caddyPackage ];
 
-        services.cron.enable = cfg.enableCron;
+        services.cron.enable = cfg.settings.cron;
         services.cron.systemCronJobs = [
-          "* * * * * cachex ${getExe cfg.cachexPackage} > ${cfg.workDir}/cachex/index.html"
+          "* * * * * cachex ${getExe cfg.cachexPackage} > ${cfg.settings.workDir}/cachex/index.html"
+        ];
+
+        services.rpcbind.enable = true; # needed for NFS
+        systemd.mounts = [
+          {
+            type = "nfs";
+            mountConfig = {
+              Options = "noatime";
+            };
+            what = "100.121.185.1:/volume2/komunix";
+            where = "${cfg.settings.workDir}/nfs";
+          }
+        ];
+        systemd.automounts = [
+          {
+            wantedBy = [ "multi-user.target" ];
+            automountConfig = {
+              TimeoutIdleSec = "600";
+            };
+            where = "${cfg.settings.workDir}/nfs";
+          }
         ];
 
         system.activationScripts.createDir =
           # bash
           mkBefore ''
-            [[ -d ${cfg.workDir}/cachex ]] || \
-              (mkdir -p ${cfg.workDir}/cachex && chown komunix:users ${cfg.workDir}/cachex)
+            [[ -d ${cfg.settings.workDir}/cachex ]] || \
+              (mkdir -p ${cfg.settings.workDir}/cachex && chown komunix:users ${cfg.settings.workDir}/cachex)
 
-            # TODO: better way is using options `services.nfs.*` from `NixOS`.
-            [[ -d ${cfg.workDir}/nfs ]] || \
-              (mount -t nfs -O rw,username=komunix,uid=1030,gid=100 100.121.185.1:/volume2/komunix ${cfg.workDir}/nfs)
-
-            ${getExe cfg.cachexPackage} ${cfg.workDir}/nfs > ${cfg.workDir}/cachex/index.html
+            ${getExe cfg.cachexPackage} ${cfg.settings.workDir}/nfs > ${cfg.settings.workDir}/cachex/index.html
           '';
 
         systemd.services.caddy = {
           unitConfig.Description = "Caddy";
-          serviceConfig.StartLimitIntervalSec = 5;
+          serviceConfig.StartLimitInterval = 5;
           serviceConfig.StartLimitBurst = 10;
           serviceConfig.Restart = "always";
           serviceConfig.RestartSec = 10;
           serviceConfig.StandardOutput = null;
           serviceConfig.StandardError = "journal";
-          serviceConfig.WorkingDirectory = cfg.workDir;
+          serviceConfig.WorkingDirectory = cfg.settings.workDir;
           serviceConfig.StateDirectory = "cachex";
           serviceConfig.RuntimeDirectory = "cachex";
           serviceConfig.ExecStart = # bash
             ''
-              ${getExe cfg.caddyPackage} file-server --root ${cfg.workDir}/cachex --listen ${cfg.listenAddress}:${toString cfg.listenPort}
+              ${getExe cfg.caddyPackage} file-server --root ${cfg.settings.workDir}/cachex --listen ${cfg.settings.listenAddress}:${toString cfg.settings.listenPort}
             '';
           wantedBy = [ "multi-user.target" ];
         };
