@@ -127,6 +127,12 @@
       services.tailscale.authKeyFile = config.sops.secrets.tailscale_auth_key.path;
       services.tailscale.extraUpFlags = [ "--ssh" ];
 
+      sops.defaultSopsFile = ../secrets/secret.yaml;
+      sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+      sops.age.keyFile = "/var/lib/sops-nix/key.txt";
+      sops.age.generateKey = true;
+      sops.secrets.tailscale_auth_key = { };
+
       users.users.root.openssh.authorizedKeys.keys = keys;
       users.users.komunix = {
         home = "/home/komunix";
@@ -143,11 +149,6 @@
         inputs.sops.nixosModules.sops
       ];
 
-      sops.defaultSopsFile = ../secrets/secret.yaml;
-      sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
-      sops.age.keyFile = "/var/lib/sops-nix/key.txt";
-      sops.age.generateKey = true;
-      sops.secrets.tailscale_auth_key = { };
     };
 
   flake.nixosModules.services-cachex =
@@ -212,7 +213,9 @@
       };
 
       config = mkIf cfg.enable {
-        environment.systemPackages = [ cfg.caddyPackage ];
+        environment.systemPackages = [
+          cfg.caddyPackage
+        ];
 
         services.cron.enable = cfg.settings.cron;
         services.cron.systemCronJobs = [
@@ -220,13 +223,17 @@
         ];
 
         services.rpcbind.enable = true; # needed for NFS
+        services.nfs.server.enable = true;
+        networking.hosts = {
+          "100.121.185.1" = [ "synology" ];
+        };
         systemd.mounts = [
           {
             type = "nfs";
             mountConfig = {
-              Options = "noatime";
+              Options = "auto,nofail,noatime,nolock,intr,tcp";
             };
-            what = "100.121.185.1:/volume2/komunix";
+            what = "synology:/volume2/komunix";
             where = "${cfg.settings.workDir}/nfs";
           }
         ];
