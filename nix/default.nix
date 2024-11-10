@@ -256,6 +256,96 @@
               (mkdir -p ${cfg.settings.workDir}/cachex && chown komunix:users ${cfg.settings.workDir}/cachex)
           '';
 
+        services.traefik.enable = true;
+        services.traefik.dynamicConfigOptions.http.middlewares.raspi.headers.customResponseHeaders."X-Served-From" = "raspi";
+        services.traefik.dynamicConfigOptions.http.middlewares.cachex_index.headers.customResponseHeaders.server = "komunix 0.66.6";
+        services.traefik.dynamicConfigOptions.http.middlewares.cachex_fallback.headers.customResponseHeaders."X-Komunix-Fallback-To" = "cache.nixos.org";
+        services.traefik.dynamicConfigOptions.http.middlewares.nice.headers.customResponseHeaders."X-faultables" = "hayo mau cari apa .:monman";
+        services.traefik.dynamicConfigOptions.http.middlewares.nice.headers.customResponseHeaders."X-Powered-By" = "PHP 69.42.0 (tapi boong)";
+
+        services.traefik.dynamicConfigOptions.http.services = {
+          komunix_index = {
+            loadBalancer.servers = [
+              { url = "http://127.0.0.1:2026"; }
+            ];
+          };
+          nice = {
+            loadBalancer.servers = [
+              { url = "http://127.0.0.1:2025"; }
+            ];
+          };
+          index = {
+            loadBalancer.servers = [
+              { url = "http://127.0.0.1:2022"; }
+            ];
+          };
+          cachex_index = {
+            loadBalancer.servers = [
+              { url = "http://127.0.0.1:2022"; }
+            ];
+          };
+          cachex_fallback = {
+            loadBalancer = {
+              servers = [
+                { url = "http://127.0.0.1:8080"; }
+              ];
+              passHostHeader = false;
+            };
+          };
+          cachex = {
+            loadBalancer.servers = [
+              { url = "http://127.0.0.1:8080"; }
+            ];
+          };
+          npm = {
+            loadBalancer.servers = [
+              { url = "http://127.0.0.1:4873"; }
+            ];
+          };
+          npm_index = {
+            loadBalancer.servers = [
+              { url = "http://127.0.0.1:2023"; }
+            ];
+          };
+        };
+
+        services.traefik.dynamicConfigOptions.http.routers = {
+          nice = {
+            rule = "Host(`raspi.faultables.net`)";
+            service = "nice";
+            middlewares = [ "nice" ];
+          };
+          index = {
+            rule = "Host(`komunix.org`)";
+            service = "komunix_index";
+            middlewares = [ "raspi" ];
+          };
+          cachex = {
+            rule = "Host(`cache.komunix.org`) && PathPrefix (`/`)";
+            service = "cachex_fallback";
+            priority = 1;
+            middlewares = [
+              "cachex_index"
+              "cachex_fallback"
+            ];
+          };
+          cachex_index = {
+            rule = "Host(`cache.komunix.org`) && Path (`/`)";
+            service = "cachex_index";
+            priority = 1337;
+            middlewares = [ "cachex_index" ];
+          };
+          npm = {
+            rule = "Host(`npm.komunix.org`) && PathPrefix (`/`)";
+            service = "npm";
+          };
+          npm_index = {
+            rule = "Host(`npm.komunix.org`) && Path (`/`)";
+            service = "npm_index";
+            priority = 1337;
+          };
+        };
+
         systemd.services.caddy = {
           unitConfig.Description = "Caddy";
           serviceConfig.StartLimitInterval = 5;
