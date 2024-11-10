@@ -75,6 +75,7 @@
       (
         { config, ... }:
         {
+          networking.hostName = "komunix-dev";
           services.cachex.enable = true;
           services.cachex.cachexPackage = self.packages.aarch64-linux.cachex;
           services.cachex.settings.cron = true;
@@ -117,6 +118,15 @@
       ];
     in
     {
+      config,
+      ...
+    }:
+    {
+
+      services.tailscale.enable = true;
+      services.tailscale.authKeyFile = config.sops.secrets.tailscale_auth_key.path;
+      services.tailscale.extraUpFlags = [ "--ssh" ];
+
       users.users.root.openssh.authorizedKeys.keys = keys;
       users.users.komunix = {
         home = "/home/komunix";
@@ -128,6 +138,16 @@
         ];
         openssh.authorizedKeys.keys = keys;
       };
+
+      imports = [
+        inputs.sops.nixosModules.sops
+      ];
+
+      sops.defaultSopsFile = ../secrets/secret.yaml;
+      sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+      sops.age.keyFile = "/var/lib/sops-nix/key.txt";
+      sops.age.generateKey = true;
+      sops.secrets.tailscale_auth_key = { };
     };
 
   flake.nixosModules.services-cachex =
