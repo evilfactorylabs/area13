@@ -59,6 +59,9 @@
       (
         { config, ... }:
         {
+          networking.hostName = "komunix-dev";
+          services.traefik.enable = true;
+          services.tailscale.enable = true;
           services.cachex.enable = true;
           services.cachex.cachexPackage = self.packages.aarch64-linux.cachex;
           services.cachex.settings.cron = true;
@@ -76,21 +79,8 @@
         { config, ... }:
         {
           networking.hostName = "komunix-dev";
-          services.cachex.enable = true;
-          services.cachex.cachexPackage = self.packages.aarch64-linux.cachex;
-          services.cachex.settings.cron = true;
-          services.cachex.settings.workDir = config.users.users.komunix.home;
-        }
-      )
-    ];
-  };
-
-  flake.nixosConfigurations.komunix = inputs.nixpkgs.lib.nixosSystem {
-    system = "aarch64-linux";
-    modules = inputs.nixpkgs.lib.attrValues self.nixosModules ++ [
-      (
-        { config, ... }:
-        {
+          services.traefik.enable = true;
+          services.tailscale.enable = true;
           services.cachex.enable = true;
           services.cachex.cachexPackage = self.packages.aarch64-linux.cachex;
           services.cachex.settings.cron = true;
@@ -110,6 +100,24 @@
     ];
   };
 
+  flake.nixosModules.tailscale =
+    { config, ... }:
+    {
+      services.tailscale.extraUpFlags = [ "--ssh" ];
+      services.tailscale.authKeyFile = config.sops.secrets.tailscale_auth_key.path;
+      sops.secrets.tailscale_auth_key = { };
+    };
+
+  flake.nixosModules.sops = {
+    imports = [
+      inputs.sops.nixosModules.sops
+    ];
+    sops.defaultSopsFile = ../secrets/secret.yaml;
+    sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+    sops.age.keyFile = "/var/lib/sops-nix/key.txt";
+    sops.age.generateKey = true;
+  };
+
   flake.nixosModules.maintainers =
     let
       keys = [
@@ -118,20 +126,10 @@
       ];
     in
     {
-      config,
-      ...
-    }:
-    {
-
-      services.tailscale.enable = true;
-      services.tailscale.authKeyFile = config.sops.secrets.tailscale_auth_key.path;
-      services.tailscale.extraUpFlags = [ "--ssh" ];
-
-      sops.defaultSopsFile = ../secrets/secret.yaml;
-      sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
-      sops.age.keyFile = "/var/lib/sops-nix/key.txt";
-      sops.age.generateKey = true;
-      sops.secrets.tailscale_auth_key = { };
+      # hosts aliases
+      networking.hosts = {
+        "100.121.185.1" = [ "synology" ];
+      };
 
       users.users.root.openssh.authorizedKeys.keys = keys;
       users.users.komunix = {
@@ -144,16 +142,115 @@
         ];
         openssh.authorizedKeys.keys = keys;
       };
+    };
 
-      imports = [
-        inputs.sops.nixosModules.sops
-      ];
+  flake.nixosModules.traefik =
+    { config, lib, ... }:
+    let
+      configCachex = config.services.cachex;
+      cachexListen = "${configCachex.settings.listenAddress}:${toString configCachex.settings.listenPort}";
+    in
+    {
+      services.traefik.dynamicConfigOptions.http.middlewares =
+        {
+          raspi.headers.customResponseHeaders."X-Served-From" = "raspi";
+          cachex_fallback.headers.customResponseHeaders."X-Komunix-Fallback-To" = "cache.nixos.org";
+          nice.headers.customResponseHeaders."X-faultables" = "hayo mau cari apa .:monman";
+          nice.headers.customResponseHeaders."X-Powered-By" = "PHP 69.42.0 (tapi boong)";
+        }
+        // (lib.optionalAttrs configCachex.enable {
+          cachex_index.headers.customResponseHeaders.server = "komunix 0.66.6";
 
-      # hosts aliases
-      networking.hosts = {
-        "100.121.185.1" = [ "synology" ];
-      };
+        });
 
+      services.traefik.dynamicConfigOptions.http.services =
+        {
+          komunix_index = {
+            loadBalancer.servers = [
+              { url = "http://127.0.0.1:2026"; }
+            ];
+          };
+          nice = {
+            loadBalancer.servers = [
+              { url = "http://127.0.0.1:2025"; }
+            ];
+          };
+          cachex_fallback = {
+            loadBalancer = {
+              servers = [
+                { url = "http://127.0.0.1:8080"; }
+              ];
+              passHostHeader = false;
+            };
+          };
+          cachex = {
+            loadBalancer.servers = [
+              { url = "http://127.0.0.1:8080"; }
+            ];
+          };
+          npm = {
+            loadBalancer.servers = [
+              { url = "http://127.0.0.1:4873"; }
+            ];
+          };
+          npm_index = {
+            loadBalancer.servers = [
+              { url = "http://127.0.0.1:2023"; }
+            ];
+          };
+        }
+        // (lib.optionalAttrs configCachex.enable {
+          index = {
+            loadBalancer.servers = [
+              { url = "http://${cachexListen}"; }
+            ];
+          };
+          cachex_index = {
+            loadBalancer.servers = [
+              { url = "http://${cachexListen}"; }
+            ];
+          };
+        });
+
+      services.traefik.dynamicConfigOptions.http.routers =
+        {
+          nice = {
+            rule = "Host(`raspi.faultables.net`)";
+            service = "nice";
+            middlewares = [ "nice" ];
+          };
+          index = {
+            rule = "Host(`komunix.org`)";
+            service = "komunix_index";
+            middlewares = [ "raspi" ];
+          };
+          cachex = {
+            rule = "Host(`cache.komunix.org`) && PathPrefix (`/`)";
+            service = "cachex_fallback";
+            priority = 1;
+            middlewares = [
+              "cachex_index"
+              "cachex_fallback"
+            ];
+          };
+          npm = {
+            rule = "Host(`npm.komunix.org`) && PathPrefix (`/`)";
+            service = "npm";
+          };
+          npm_index = {
+            rule = "Host(`npm.komunix.org`) && Path (`/`)";
+            service = "npm_index";
+            priority = 1337;
+          };
+        }
+        // (lib.optionalAttrs configCachex.enable {
+          cachex_index = {
+            rule = "Host(`cache.komunix.org`) && Path (`/`)";
+            service = "cachex_index";
+            priority = 1337;
+            middlewares = [ "cachex_index" ];
+          };
+        });
     };
 
   flake.nixosModules.services-cachex =
@@ -222,6 +319,12 @@
           cfg.caddyPackage
           pkgs.nfs-utils
         ];
+        system.activationScripts.createDir =
+          # bash
+          mkBefore ''
+            [[ -d ${cfg.settings.workDir}/cachex ]] || \
+              (mkdir -p ${cfg.settings.workDir}/cachex && chown komunix:users ${cfg.settings.workDir}/cachex)
+          '';
 
         services.cron.enable = cfg.settings.cron;
         services.cron.systemCronJobs = [
@@ -248,103 +351,6 @@
             where = "${cfg.settings.workDir}/nfs";
           }
         ];
-
-        system.activationScripts.createDir =
-          # bash
-          mkBefore ''
-            [[ -d ${cfg.settings.workDir}/cachex ]] || \
-              (mkdir -p ${cfg.settings.workDir}/cachex && chown komunix:users ${cfg.settings.workDir}/cachex)
-          '';
-
-        services.traefik.enable = true;
-        services.traefik.dynamicConfigOptions.http.middlewares.raspi.headers.customResponseHeaders."X-Served-From" = "raspi";
-        services.traefik.dynamicConfigOptions.http.middlewares.cachex_index.headers.customResponseHeaders.server = "komunix 0.66.6";
-        services.traefik.dynamicConfigOptions.http.middlewares.cachex_fallback.headers.customResponseHeaders."X-Komunix-Fallback-To" = "cache.nixos.org";
-        services.traefik.dynamicConfigOptions.http.middlewares.nice.headers.customResponseHeaders."X-faultables" = "hayo mau cari apa .:monman";
-        services.traefik.dynamicConfigOptions.http.middlewares.nice.headers.customResponseHeaders."X-Powered-By" = "PHP 69.42.0 (tapi boong)";
-
-        services.traefik.dynamicConfigOptions.http.services = {
-          komunix_index = {
-            loadBalancer.servers = [
-              { url = "http://127.0.0.1:2026"; }
-            ];
-          };
-          nice = {
-            loadBalancer.servers = [
-              { url = "http://127.0.0.1:2025"; }
-            ];
-          };
-          index = {
-            loadBalancer.servers = [
-              { url = "http://127.0.0.1:2022"; }
-            ];
-          };
-          cachex_index = {
-            loadBalancer.servers = [
-              { url = "http://127.0.0.1:2022"; }
-            ];
-          };
-          cachex_fallback = {
-            loadBalancer = {
-              servers = [
-                { url = "http://127.0.0.1:8080"; }
-              ];
-              passHostHeader = false;
-            };
-          };
-          cachex = {
-            loadBalancer.servers = [
-              { url = "http://127.0.0.1:8080"; }
-            ];
-          };
-          npm = {
-            loadBalancer.servers = [
-              { url = "http://127.0.0.1:4873"; }
-            ];
-          };
-          npm_index = {
-            loadBalancer.servers = [
-              { url = "http://127.0.0.1:2023"; }
-            ];
-          };
-        };
-
-        services.traefik.dynamicConfigOptions.http.routers = {
-          nice = {
-            rule = "Host(`raspi.faultables.net`)";
-            service = "nice";
-            middlewares = [ "nice" ];
-          };
-          index = {
-            rule = "Host(`komunix.org`)";
-            service = "komunix_index";
-            middlewares = [ "raspi" ];
-          };
-          cachex = {
-            rule = "Host(`cache.komunix.org`) && PathPrefix (`/`)";
-            service = "cachex_fallback";
-            priority = 1;
-            middlewares = [
-              "cachex_index"
-              "cachex_fallback"
-            ];
-          };
-          cachex_index = {
-            rule = "Host(`cache.komunix.org`) && Path (`/`)";
-            service = "cachex_index";
-            priority = 1337;
-            middlewares = [ "cachex_index" ];
-          };
-          npm = {
-            rule = "Host(`npm.komunix.org`) && PathPrefix (`/`)";
-            service = "npm";
-          };
-          npm_index = {
-            rule = "Host(`npm.komunix.org`) && Path (`/`)";
-            service = "npm_index";
-            priority = 1337;
-          };
-        };
 
         systemd.services.caddy = {
           unitConfig.Description = "Caddy";
