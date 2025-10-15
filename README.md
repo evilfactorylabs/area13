@@ -13,7 +13,7 @@ If you're curious about the infrastructure behind [evilfactorylabs.org](https://
 
 ## Prerequisites
 
-You don't technically need to run or setup anything on your end. But if you want to setup for your own needs, you can take a look into [`shell.nix`](./shell.nix) and [`.envrc.example`](./.envrc.example) or you can just install [Terraform](https://terraform.io) on your machine (and messing with your own very [environment variables](https://direnv.net)).
+You don't technically need to run or setup anything on your end. But if you want to setup for your own needs, you can take a look into [`development.nix`](./nix/development.nix#L37-L41) and [`.envrc.example`](./.envrc.example) or you can just install [Terraform](https://terraform.io) on your machine (and messing with your own very [environment variables](https://direnv.net)).
 
 You have to know a little knowledge in using Terraform so you know what you're doing ;)
 
@@ -21,9 +21,36 @@ You have to know a little knowledge in using Terraform so you know what you're d
 
 You can just clone this repo, create a new branch, and push your changes. Anyone with direct write access to the repository (i.e: making a pull request from this repo) will propagate `terraform plan` command behind the scenes. Only repository maintainers can initialize `terraform apply` but who knows, right?
 
+## Machines
+
+### Komunix
+
+**Raspberry Pi 4 Model B Rev 1.2**
+
+#### Flash Images 
+
+we our using `NixOS` and creating sd-card image with command:
+
+```console
+$ nix build github:evilfactorylabs/area13#nixosConfigurations.komunix.config.system.build.sdImage
+
+# verify image created in `result/sd-image/*.img`
+
+# write image with pv and dd  - WARNING! rdiskX replace with actual id (e.g. rdisk5)
+$ nix run nixpkgs#pv ./result/sd-image/*.img | sudo dd of=/dev/rdiskX bs=4M 
+
+```
+
+### Update System Configurations
+
+```console
+$ nix run nixpkgs#nixos-rebuild --flake github:evilfactorylabs/area13#komunix  switch --target-host <IP> --build-host <IP>
+```
+
 ## Maintainers
 
 - [faultables](https://github.com/faultables), @evilfactorylabs
+- [r17x](https://github.com/r17x), @evilfactorylabs
 
 ## License
 
